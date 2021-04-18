@@ -4,7 +4,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-class SavingsAccount extends BankAccount {
+public class SavingsAccount extends BankAccount {
 
 	public SavingsAccount() {
 		super();

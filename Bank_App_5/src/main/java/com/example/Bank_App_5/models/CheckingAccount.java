@@ -4,7 +4,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-class CheckingAccount extends BankAccount {
+public class CheckingAccount extends BankAccount {
 
 	// public static final double INTEREST_RATE = 0.0001;
 	public CheckingAccount() {
