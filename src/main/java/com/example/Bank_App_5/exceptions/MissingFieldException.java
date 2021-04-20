@@ -3,9 +3,11 @@ package com.example.Bank_App_5.exceptions;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-@ResponseStatus(HttpStatus.BAD_REQUEST)
+@ResponseStatus(HttpStatus.NOT_FOUND)
 public class MissingFieldException extends Exception {
-	public MissingFieldException(String msg) {
-		super(msg);
+		
+	public MissingFieldException(String message) {
+		super(message);
 	}
+
 }

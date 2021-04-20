@@ -1,311 +1,228 @@
 package com.example.Bank_App_5.models;
 
-import java.io.*;
-import java.text.ParseException;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.text.DateFormat;
+import java.text.Format;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
-
 public class MeritBank {
-
-	private static long nextAccountNumber = 0;
-	private static int accountHolderNumb = 1;
-	private static AccountHolder AccountHoldersArray[] = new AccountHolder[0];
-	private static CDOffering CDOfferingsArray[] = new CDOffering[0];
-	private static double totalvalue = 0;
-	protected static long accountNumber;
-	//protected static FraudQueue fraudQueue = new FraudQueue();
-
+	
 	public static void addAccountHolder(AccountHolder accountHolder) {
-		AccountHolder[] newAccountHolderArray = new AccountHolder[AccountHoldersArray.length + 1];
-		for (int i = 0; i < AccountHoldersArray.length; i++) {
-			newAccountHolderArray[i] = AccountHoldersArray[i];
-		}
-		newAccountHolderArray[accountHolderNumb] = accountHolder;
-		AccountHoldersArray = newAccountHolderArray;
-		accountHolderNumb++;
+		accHolderList.add(accountHolder);
 	}
-
-	public static AccountHolder[] getAccountHolders(long id) {
-		return AccountHoldersArray;
+	public static AccountHolder[] getAccountHolders() {
+		AccountHolder[] accHolderArr = accHolderList.toArray(new AccountHolder[0]);
+		return accHolderArr;
 	}
-
-	public static CDOffering[] getCDOfferings() {
-		return CDOfferingsArray;
-	}
-
-	public static CDOffering getBestCDOffering(double depositAmount) {
-		double best = 0.0;
-		CDOffering bestOffering = null;
-		if (CDOfferingsArray == null) {
-			return null;
-		}
-		for (CDOffering offering : CDOfferingsArray) {
-			if (futureValue(depositAmount, offering.getInterestRate(), offering.getTerm()) > best) {
-				bestOffering = offering;
-				best = futureValue(depositAmount, offering.getInterestRate(), offering.getTerm());
-			}
-		}
-		return bestOffering;
-	}
-
-	public static CDOffering getSecondBestCDOffering(double depositAmount) {
-		if (CDOfferingsArray == null) {
-			return null;
-		}
-		CDOffering bestOffering = null;
-		double best = 0.0;
-		CDOffering secondBestOffering = null;
-
-		for (CDOffering offering : CDOfferingsArray) {
-			if (futureValue(depositAmount, offering.getInterestRate(), offering.getTerm()) > best) {
-				secondBestOffering = bestOffering;
-				bestOffering = offering;
-				best = futureValue(depositAmount, offering.getInterestRate(), offering.getTerm());
-			}
-		}
-		return secondBestOffering;
-	}
-
-	public static void clearCDOfferings() {
-		CDOfferingsArray = null;
-	}
-
-	public static void clearAccountHolder() {
-		AccountHoldersArray = null;
-	}
-
-	public static void setCDOfferings(CDOffering[] offerings) {
-		CDOfferingsArray = offerings;
-	}
-
-	public static long getNextAccountNumber() {
-		return nextAccountNumber;
-	}
-
-	public static double totalBalances() {
-		double total = 0.0;
-		for (AccountHolder accounts : AccountHoldersArray) {
-			total += accounts.getCombinedBalance();
-		}
+	public static AccountHolder getAccountHolderById(int accountHolderId) {
 		
-		return total;
-
+		return accHolderList.get(accountHolderId - 1);
 	}
-
-	public static double futureValue(double presentValue, double interestRate, int term) {
-		return recursiveFutureValue(presentValue, term, interestRate);
+	
+	public static CDOffering[] getCDOfferings() {
+		return offerings;
 	}
-
-	public static double recursiveFutureValue(double amount, int years, double interestRate) {
-		if (years > 0) {
-			double newAmount = amount + (amount * interestRate);
-			return recursiveFutureValue(newAmount, years - 1, interestRate);
+	public static CDOffering getCDOfferingById(int cdOfferingId) {
+		return offeringsList.get(cdOfferingId-1);
+	}
+	public static CDOffering getBestCDOffering(double depositAmount) {
+		//CDOffering[] offering= getCDOfferings();
+		CDOffering bestCDOffer = offerings[0];
+		for(int i=1; i<offerings.length;i++) {
+			double futureVal=futureValue(depositAmount,offerings[i].getInterestRate(),offerings[i].getTerm());
+			double bestFutureVal = futureValue(depositAmount,bestCDOffer.getInterestRate(),bestCDOffer.getTerm());
+			if(futureVal>bestFutureVal) {
+				bestFutureVal=futureVal;
+				bestCDOffer=offerings[i];
+			}
 		}
-		return amount;
+		return bestCDOffer;
 	}
+	public static CDOffering getSecondBestCDOffering(double depositAmount) {
+		
+		CDOffering secondBestOffer = null;
+		for(int i=1;i<offerings.length;i++) {
+			for(int j=i+1;j<offerings.length;j++) {
+				double bestFutureVal=futureValue(depositAmount,offerings[i].getInterestRate(),offerings[i].getTerm());
+				double futureVal = futureValue(depositAmount,offerings[j].getInterestRate(),offerings[j].getTerm());
+			//double secondBestFutureVal = futureValue(depositAmount,secondBestOffer.getInterestRate(),secondBestOffer.getTerm());
+				CDOffering[] temp=new CDOffering[1];
+				if(futureVal>bestFutureVal) {
+					temp[0] = offerings[i];
+					offerings[i]=offerings[j];
+					offerings[j]=temp[0];
+				}	
+			}
+		}
+		secondBestOffer=offerings[1];
+		return secondBestOffer;
+	}
+	public static void clearCDOfferings() {
+		offerings=null;	
+	}
+	public static void setCDOfferings(CDOffering[] offerings) {
+		MeritBank.offerings=offerings;                          //cannot access static variable with this keyword
+		
+	}
+	public static long getNextAccountNumber() {
+		
+		return nextAccNumber++;
+	}
+	public static Date getDate() {
+		Date date = new Date();
+		Format f = new SimpleDateFormat("dd/MM/yy");
+		String strDate = f.format(date);
+		date = new Date(strDate);
+		return date;
+	}
+	public static double totalBalances() {
+		AccountHolder[] accountHolderArr= getAccountHolders();
+		double totalBalance=0;
+		for(int i=0;i<accountHolderArr.length;i++) {
+			totalBalance+=accountHolderArr[i].getSavingsBalance()+accountHolderArr[i].getCheckingBalance()+accountHolderArr[i].getCDBalance();
+		}
+		return totalBalance;
+	}
+		
+	public static double futureValue(double presentValue, double interestRate, int term) {
+		double futureVal = presentValue * Math.pow((1+interestRate),term);
+		return futureVal;
+	}
+	public static void setNextAccountNumber(long nextAccountNumber) {
+		nextAccNumber = nextAccountNumber;
+	}	
+	public static boolean readFromFile(String fileName)  {
+		try {
+			BufferedReader rd = new BufferedReader(new FileReader(fileName));
+			String line = rd.readLine(); 											//reads the first line
+			setNextAccountNumber(Long.parseLong(line));
+			 line = rd.readLine();													//reads the 2nd line
+			 int cdLength = Integer.parseInt(line);
+			 CDOffering[] cd = new CDOffering[cdLength];							//makes an array for CDOffering
+			 for(int i=0; i<cdLength;i++) {											//length of array was read from 2nd line
+				 line=rd.readLine();
+				 //cd[i]=CDOffering.readFromString(line);									//stores the CDOffering with (term and rate) in each index
+			 }
+			 setCDOfferings(cd);		//requirement:"when reading from file, the data should overwrite the MeritBank data such that previous data no longer exists, only the data read from the file should exist"
+			 line=rd.readLine();
+			 int accHolderLength=Integer.parseInt(line);
+			 accHolderList = new ArrayList<AccountHolder>();//the accHolderList now points to the newly created arrayList of accounts which is read from the file.//automatically the pointer has now changed from previous lists to the new arrayList.
+			 for (int i = 0; i < accHolderLength; i++) {
+					line = rd.readLine();
+					//System.out.println("AH Read"+line);
+					AccountHolder a = AccountHolder.readFromString(line);
+					
+					accHolderList.add(a);	
+					line = rd.readLine();
+					int numOfChecking = Integer.parseInt(line);
+					if (numOfChecking != 0) {
+						for (int j = 0; j < numOfChecking; j++) {
+							
+							line = rd.readLine();
+							//System.out.println("CA Read"+line);
+							CheckingAccount ch =CheckingAccount.readFromString(line);
+							a.addCheckingAccount(ch);
+						}
+					}
+					line = rd.readLine();
+					int numOfSavings = Integer.parseInt(line);
+					if (numOfSavings != 0) {
+						for (int j = 0; j < numOfSavings; j++) {
+							
+							line = rd.readLine();
+							//System.out.println("SA Read"+line);
+							SavingsAccount sv = SavingsAccount.readFromString(line);
+							a.addSavingsAccount(sv);
+						}
+					}
+					line = rd.readLine();
+					int numOfCD = Integer.parseInt(line);
+					if (numOfCD != 0) {
+						for (int j = 0; j < numOfCD; j++) {
+							
+							line = rd.readLine();
+							CDAccount cdAcc = CDAccount.readFromString(line);
+							a.addCDAccount(cdAcc);
 
-//	static boolean readFromFile(String fileName) {
-//
-//		clearAccountHolder();
-//		clearCDOfferings();
-//
-//		CDOffering cdofering[] = new CDOffering[0];
-//		AccountHolder[] accountHolders = new AccountHolder[0];
-//		setNextAccountNumber((long) 0);
-//		FraudQueue fraudQueue = new FraudQueue();
-//		Set<String> transactions = new HashSet<String>();
-//		try {
-//			FileReader reader = new FileReader(fileName);
-//			BufferedReader bufferedReader = new BufferedReader(reader);
-//			Long nextAccountNumber = Long.valueOf(bufferedReader.readLine());
-//			setNextAccountNumber(nextAccountNumber);
-//			int numberOfCDOfferings = Integer.valueOf(bufferedReader.readLine());
-//
-//			for (int i = 0; i < numberOfCDOfferings; i++) {
-//				cdofering = Arrays.copyOf(cdofering, cdofering.length + 1);
-//				cdofering[cdofering.length - 1] = CDOffering.readFromString(bufferedReader.readLine());
-//				CDOfferingsArray = cdofering;
-//			}
-//			/* >---------------------AccountHolders----------------------------< */
-//			int numOfAccountHolders = Integer.valueOf(bufferedReader.readLine());
-//			for (int nah = 0; nah < numOfAccountHolders; nah++) {
-//				AccountHolder acctH = AccountHolder.readFromString(bufferedReader.readLine());
-//				accountHolders = Arrays.copyOf(accountHolders, accountHolders.length + 1);
-//				accountHolders[accountHolders.length - 1] = acctH;
-//				AccountHoldersArray = accountHolders;
-//
-//				/* >---------------------CheckingAccounts----------------------------< */
-//				int numOfChecking = Integer.valueOf(bufferedReader.readLine());
-//				for (int j = 0; j < numOfChecking; j++) {
-//					acctH.addCheckingAccount(CheckingAccount.readFromString(bufferedReader.readLine()));
-//					int numberOfCheckingTransactions = Integer.valueOf(bufferedReader.readLine());
-//
-//					for (int c = 0; c < numberOfCheckingTransactions; c++) {
-//						transactions.add(bufferedReader.readLine());
-//					}
-//				}
-//				/* >---------------------SavingsAccounts----------------------------< */
-//				int numOfSavings = Integer.valueOf(bufferedReader.readLine());
-//
-//				for (int k = 0; k < numOfSavings; k++) {
-//					acctH.addSavingsAccount(SavingsAccount.readFromString(bufferedReader.readLine()));
-//					int numberOfSavingsTransactions = Integer.valueOf(bufferedReader.readLine());
-//					for (int sa = 0; sa < numberOfSavingsTransactions; sa++) {
-//						transactions.add(bufferedReader.readLine());
-//					}
-//				}
-//				/* >---------------------CDAccounts----------------------------< */
-//				int numOfCD = Integer.valueOf(bufferedReader.readLine());
-//				for (int m = 0; m < numOfCD; m++) {
-//					acctH.addCDAccount(CDAccount.readFromString(bufferedReader.readLine()));
-//					int numberOfCDATransactions = Integer.valueOf(bufferedReader.readLine());
-//					for (int cd = 0; cd < numberOfCDATransactions; cd++) {
-//						transactions.add(bufferedReader.readLine());
-//					}
-//				}
-//
-//				System.out.println(transactions.size());
-//				for (String transaction : transactions) {
-//					Transaction newTrans = Transaction.readFromString(transaction);
-//					if (newTrans.getSourceAccount() == null) {
-//						newTrans.getTargetAccount().addTransaction(newTrans);
-//					} else {
-//						newTrans.getTargetAccount().addTransaction(newTrans);
-//						newTrans.getSourceAccount().addTransaction(newTrans);
-//					}
-//				}
-//			}
-//			int numberOfFraudQueueTransactions = Integer.valueOf(bufferedReader.readLine());
-//			for (int farq = 0; farq < numberOfFraudQueueTransactions; farq++) {
-//				fraudQueue.addTransaction(Transaction.readFromString(bufferedReader.readLine()));
-//			}
-//			return true;
-//		}
-//
-//		catch (Exception exception) {
-//			System.out.println(exception);
-//
-//		}
-//		return false;
-//	}
-//
-//	static boolean writeToFile(String fileName) {
-//		try {
-//			FileWriter writer = new FileWriter(fileName);
-//			BufferedWriter bufferedWriter = new BufferedWriter(writer);
-//			bufferedWriter.write(String.valueOf(nextAccountNumber));
-//			bufferedWriter.newLine();
-//			bufferedWriter.write(String.valueOf(CDOfferingsArray.length));
-//			bufferedWriter.newLine();
-//			for (int i = 0; i < CDOfferingsArray.length; i++) {
-//				bufferedWriter.write(CDOfferingsArray[i].writeToString());
-//				bufferedWriter.newLine();
-//			}
-//
-//			bufferedWriter.write(String.valueOf(AccountHoldersArray.length));
-//			bufferedWriter.newLine();
-//			for (int j = 0; j < AccountHoldersArray.length; j++) {
-//				bufferedWriter.write(AccountHoldersArray[j].writeToString());
-//				bufferedWriter.newLine();
-//				bufferedWriter.write(String.valueOf(AccountHoldersArray[j].getCheckingAccounts().length));
-//				bufferedWriter.newLine();
-//				for (int k = 0; k < AccountHoldersArray[j].getCheckingAccounts().length; k++) {
-//					bufferedWriter.write(AccountHoldersArray[j].getCheckingAccounts()[k].writeToString());
-//					bufferedWriter.newLine();
-//					bufferedWriter.write(
-//							String.valueOf(AccountHoldersArray[j].getCheckingAccounts()[k].getTransactions().size()));
-//					bufferedWriter.newLine();
-//					int chT = AccountHoldersArray[j].getCheckingAccounts()[k].getTransactions().size();
-//					for (int ct = 0; ct < chT; ct++) {
-//						bufferedWriter.write(AccountHoldersArray[j].getCheckingAccounts()[k].getTransactions().get(ct)
-//								.writeToString());
-//						bufferedWriter.newLine();
-//					}
-//				}
-//				bufferedWriter.write(String.valueOf(AccountHoldersArray[j].getSavingsAccounts().length));
-//				bufferedWriter.newLine();
-//				for (int m = 0; m < AccountHoldersArray[j].getSavingsAccounts().length; m++) {
-//					bufferedWriter.write(AccountHoldersArray[j].getSavingsAccounts()[m].writeToString());
-//					bufferedWriter.newLine();
-//					bufferedWriter.write(
-//							String.valueOf(AccountHoldersArray[j].getSavingsAccounts()[m].getTransactions().size()));
-//					bufferedWriter.newLine();
-//					int st1 = AccountHoldersArray[j].getSavingsAccounts()[m].getTransactions().size();
-//					for (int sas = 0; sas < st1; sas++) {
-//						bufferedWriter.write(AccountHoldersArray[j].getSavingsAccounts()[m].getTransactions().get(st1)
-//								.writeToString());
-//						bufferedWriter.newLine();
-//					}
-//				}
-//				bufferedWriter.write(String.valueOf(fraudQueue.getTransaction().size()));
-//				bufferedWriter.newLine();
-//
-//				for (int far = 0; far < fraudQueue.getTransaction().size(); far++) {
-//					bufferedWriter.write(fraudQueue.getTransaction().get(far).writeToString());
-//					bufferedWriter.newLine();
-//				}
-//			}
-//			writer.close();
-//			return true;
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//			return false;
-//		}
-//
-//	}
-
-	/*
-	 * i. If transaction does not violate any constraints, deposit/withdraw values
-	 * from the relevant BankAccounts and add the transaction to the relevant
-	 * BankAccounts ii. If the transaction violates any of the basic constraints
-	 * (negative amount, exceeds available balance) the relevant exception should be
-	 * thrown and the processing should terminate iii. If the transaction violates
-	 * the $1,000 suspicion limit, it should simply be added to the FraudQueue for
-	 * future processing
-	 */
-//	public static boolean processTransaction(Transaction transaction)
-//			throws NegativeAmountException, ExceedsAvailableBalanceException, ExceedsFraudSuspicionLimitException {
-//		transaction.process();
-//		return false;
-//	}
-//
-//	public static FraudQueue getFraudQueue() {
-//		return fraudQueue;
-//	}
-//
-//	public static BankAccount getBankAccount(long accountId) {
-//		BankAccount accountMatched = null;
-//		for (AccountHolder ah : getAccountHolders()) {
-//			for (CDAccount cda : ah.getCDAccounts()) {
-//				if (cda.getAccountNumber() == accountId) {
-//					accountMatched = cda;
-//				}
-//			}
-//			for (CheckingAccount cha : ah.getCheckingAccounts()) {
-//				if (cha.getAccountNumber() == accountId) {
-//					accountMatched = cha;
-//				}
-//			}
-//			for (SavingsAccount sva : ah.getSavingsAccounts()) {
-//				if (sva.getAccountNumber() == accountId) {
-//					accountMatched = sva;
-//				}
-//			}
-//		}
-//		return accountMatched;
-//	}
-//
-//	static AccountHolder[] sortAccountHolders() {
-//		Arrays.sort(AccountHoldersArray);
-//		for (AccountHolder a : AccountHoldersArray) {
-//			System.out.println(a.getCombinedBalance());
-//		}
-//		return AccountHoldersArray;
-//	}
-//
-//	static void setNextAccountNumber(long accountNumber) {
-//		nextAccountNumber = accountNumber;
-//
-//	}
-
+							//a.addCDAccount(offerings[j], balance);
+						}
+					}
+			}
+			rd.close();
+			return true;
+		} catch(Exception e) {
+			return false;
+		}
+	}
+	
+	public static boolean writeToFile(String fileName) {
+		try{	
+			PrintWriter wr = new PrintWriter(new FileWriter(fileName));
+			//wr.print("");
+			wr.println(nextAccNumber);
+			wr.println(offerings.length);
+			for(int i=0;i<offerings.length;i++) {
+				wr.println(offerings[i].writeToString());
+			}
+			wr.println(accHolderList.size());
+			for(int i=0;i<accHolderList.size();i++) {
+				AccountHolder accInfo=accHolderList.get(i);
+				wr.println(accInfo.writeToString());
+				int numOfCheckings = accInfo.getNumberOfCheckingAccounts();
+				wr.println(numOfCheckings);
+				if(numOfCheckings!=0) {
+					CheckingAccount[] checking=accInfo.getCheckingAccounts();
+					for(int j=0;j<numOfCheckings;j++) {
+						wr.println(checking[j].writeToString());
+					}
+				}
+				int numOfSavings = accInfo.getNumberOfSavingsAccounts();
+				wr.println(numOfSavings);
+				if(numOfSavings!=0) {
+					SavingsAccount[] savings=accInfo.getSavingsAccounts();
+					for(int j=0;j<numOfSavings;j++) {
+						wr.println(savings[j].writeToString());
+					}
+				}
+				int numOfCD = accInfo.getNumberOfCDAccounts();
+				wr.println(numOfCD);
+				if(numOfCD!=0) {
+					CDAccount[] cd=accInfo.getCDAccounts();
+					for(int j=0;j<numOfSavings;j++) {
+						wr.println(cd[j].writeToString());
+					}
+				}	
+			}
+			wr.close();
+			return true;
+		} catch (IOException e) {
+			return false;
+		}
+	}
+	
+	public static AccountHolder[] sortAccountHolders() {
+		Collections.sort(accHolderList);											//Collections.sort(list) returns a void,and cannot be stored to any variable,the list itself is sorted 
+		return accHolderList.toArray(new AccountHolder[0]);							//then to convert to array, separately use, list.toArray, 
+																					//*Collections.sort(list).toArray()* will not work, it's an error.
+	}
+	
+	public static ArrayList<AccountHolder> accHolderList = new ArrayList<AccountHolder>();
+	private static long nextAccNumber=1;
+	private static CDOffering[] offerings;
+	
+	private static List<CDOffering> offeringsList = new ArrayList<>();
+	
+	public static void addCDOffering(CDOffering cdo) {
+		offeringsList.add(cdo);
+	}
+	
+	public static List<CDOffering> getCDOffering() {
+		return offeringsList;
+	}
+	
 }

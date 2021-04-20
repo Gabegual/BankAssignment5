@@ -1,37 +1,32 @@
 package com.example.Bank_App_5.models;
 
-import java.text.ParseException;
+import java.text.Format;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.StringTokenizer;
 
 public class SavingsAccount extends BankAccount {
-
-	public SavingsAccount() {
-		super();
+	
+	public SavingsAccount(double balance) {
+		super(balance, SAVINGS_INTERESTRATE);
 	}
-
-	public SavingsAccount(double openBalance) {
-		super(openBalance, 0.01);
+	public SavingsAccount(long accountNumber, double balance, double interestRate,java.util.Date accountOpenedOn) {
+		super(accountNumber,balance,interestRate,accountOpenedOn);
 	}
-
-	public SavingsAccount(long accountNumber, double openingBalance, double interestRate, Date accountOpenedOn) {
-		super(accountNumber, openingBalance, interestRate, accountOpenedOn);
+	public static SavingsAccount readFromString(String accountData) throws java.lang.NumberFormatException{
+		StringTokenizer token = new StringTokenizer(accountData, ",");
+		int numAccount = Integer.parseInt(token.nextToken());
+		double balance = Double.parseDouble(token.nextToken());
+		double rate = Double.parseDouble(token.nextToken());
+		
+		Date date = new Date(token.nextToken());
+		Format f = new SimpleDateFormat("dd/MM/yy");
+		String strDate = f.format(date);
+		date = new Date(strDate);
+		
+		SavingsAccount savings = new SavingsAccount(numAccount, balance, rate, date);
+		return savings;
 	}
-
-	public String toString() {
-		return "Savings Account Balance: $" + balance + "\n" + "Savings Account Interest Rate: " + interestRate + "\n"
-				+ "Savings Account Balance in 3 years: $" + futureValue(3);
-
-	}
-
-	public static SavingsAccount readFromString(String accountData) throws ParseException, NumberFormatException {
-		String[] holding = accountData.split(",");
-		SimpleDateFormat date = new SimpleDateFormat("dd/MM/yyyy");
-		long accountNumber = Long.parseLong(holding[0]);
-		double balance = Double.parseDouble(holding[1]);
-		double interestRate = Double.parseDouble(holding[2]);
-		Date accountOpenedOn = date.parse(holding[3]);
-
-		return new SavingsAccount(accountNumber, balance, interestRate, accountOpenedOn);
-	}
+	public static final double SAVINGS_INTERESTRATE = 0.01;
 }

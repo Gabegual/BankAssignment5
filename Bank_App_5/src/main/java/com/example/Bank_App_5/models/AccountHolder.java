@@ -1,295 +1,210 @@
 package com.example.Bank_App_5.models;
 
-import java.util.Arrays;
+import java.util.*;
+
+import javax.validation.constraints.NotBlank;
 
 public class AccountHolder implements Comparable<AccountHolder> {
+	public  AccountHolder(String firstName, String middleName, String lastName, String ssn,int id) {
+		 this.firstName = firstName;
+		 this.middleName = middleName;
+		 this.lastName = lastName;
+		 this.ssn = ssn;
+		 this.id = nextId++;
+	}
+	
+	public int getId() {
+		return id;
+	}
 
-	private String firstName;
-	private String middleName;
-	private String lastName;
-	private String ssn;
-	CheckingAccount[] checkingArray = new CheckingAccount[0];
-	SavingsAccount[] savingsArray = new SavingsAccount[0];
-	CDAccount[] cdAccountArray = new CDAccount[0];
-	protected static final double checkingFee = 250000;
+	public void setId(int id) {
+		this.id = id;
+	}
 
-	public AccountHolder(String first, String middle, String last, String ssn) {
-		this.firstName = first;
-		this.middleName = middle;
-		this.lastName = last;
+	public String getFirstName() {
+		return this.firstName;
+	}
+	public void setFirstName(String firstName) {
+		this.firstName = firstName;
+	}
+	public String getMiddleName() {
+		return this.middleName;
+	}
+	public void setMiddleName(String middleName) {
+		this.middleName = middleName;
+	}
+	public String getLastName() {
+		return this.lastName;
+	}
+	public void setLastName(String lastName) {
+		this.lastName = lastName;
+	}
+	public String getSSN() {
+		return ssn;
+	}
+	public void setSSN(String ssn) {
 		this.ssn = ssn;
 	}
-
-	public CheckingAccount addCheckingAccount(double openingBalance)
-			throws ExceedsCombinedBalanceLimitException, ExceedsFraudSuspicionLimitException, NegativeAmountException {
-		if (getCheckingBalance() + getSavingsBalance() + openingBalance >= checkingFee) {
-			throw new ExceedsCombinedBalanceLimitException(
-					"Combined Balance of your checking and savings acounts exceeds $250,000. ");
-		}
-
-		CheckingAccount newCheck = new CheckingAccount();
-		DepositTransaction transaction = new DepositTransaction(newCheck, openingBalance);
-
-		try {
-			MeritBank.processTransaction(transaction);
-
-		} catch (NegativeAmountException exception) {
-			throw new NegativeAmountException("CAN NOT DEPOSIT OR WITHDRAW A NEGATIVE AMOUNT");
-		} catch (ExceedsFraudSuspicionLimitException exception) {
-			throw new ExceedsFraudSuspicionLimitException("TRANSACTION EXCEEDS $1000.00 AND MUST BE REVIEWED ");
-		} catch (Exception exception) {
-			exception.printStackTrace();
-		}
-
-		CheckingAccount[] chHolding = new CheckingAccount[this.checkingArray.length + 1];
-		for (int i = 0; i < this.checkingArray.length; i++) {
-			chHolding[i] = this.checkingArray[i];
-		}
-		chHolding[chHolding.length - 1] = newCheck;
-		this.checkingArray = chHolding;
-		return newCheck;
+	public CheckingAccount addCheckingAccount(double openingBalance) {
+		CheckingAccount checking=null;
+		if((getSavingsBalance()+getCheckingBalance()+openingBalance)<250000) {
+			checking= new CheckingAccount(openingBalance);
+			this.checkingAccList.add(checking);
+		} 
+		return checking;
 	}
-
-	public CheckingAccount addCheckingAccount(CheckingAccount checkingAccount)
-			throws ExceedsFraudSuspicionLimitException, ExceedsCombinedBalanceLimitException, NegativeAmountException {
-		if (getCheckingBalance() + getSavingsBalance() + checkingAccount.getBalance() >= checkingFee) {
-			throw new ExceedsCombinedBalanceLimitException(
-					"AGGREGATE BALANCE OF YOUR CHECKING AND SAVINGS EXCEEDS $250,000.");
-		}
-
-		CheckingAccount[] chHolding = new CheckingAccount[this.checkingArray.length + 1];
-		for (int i = 0; i < this.checkingArray.length; i++) {
-			chHolding[i] = this.checkingArray[i];
-		}
-		chHolding[chHolding.length - 1] = checkingAccount;
-		this.checkingArray = chHolding;
-		return checkingAccount;
-
-	}
-
-	public double getCheckingBalance() {
-		double total = 0.0;
-		for (CheckingAccount balance : checkingArray) {
-			total += balance.getBalance();
-		}
-		return total;
-	}
-
-	public SavingsAccount addSavingsAccount(double openingBalance)
-			throws ExceedsFraudSuspicionLimitException, ExceedsCombinedBalanceLimitException, NegativeAmountException {
-		if (getCheckingBalance() + getSavingsBalance() + openingBalance >= checkingFee) {
-			throw new ExceedsCombinedBalanceLimitException(
-					"AGGREGATE BALANCE OF YOUR CHECKING AND SAVINGS ACCOUNTS EXCEED $250,000");
-
-		}
-
-		if (openingBalance > 1000) {
-			throw new ExceedsFraudSuspicionLimitException("TRANSACTION EXCEEDS $1000,00 AND MUST BE REVIEWED");
-		} else
-
-		if (openingBalance < 0) {
-
-			throw new NegativeAmountException("ERROR! AMOUNT IS NEGATIVE CAN NOT TRANSFER !");
-		}
-
-		SavingsAccount newSav = new SavingsAccount(openingBalance);
-
-//		SavingsAccount newSav = new SavingsAccount();
-		//DepositTransaction transaction = new DepositTransaction(newSav, openingBalance);
-//
-//		try {
-//			MeritBank.processTransaction(transaction);
-//
-//		} catch (NegativeAmountException exception) {
-//			throw new NegativeAmountException("CAN NOT DEPOSIT OR WITHDRAW A NEGATIVE AMOUNT ");
-//		} catch (ExceedsFraudSuspicionLimitException exception) {
-//			throw new ExceedsFraudSuspicionLimitException("TRANSACTION EXCEEDS $1000,00 AND MUST BE REVIEWED");
-//		} catch (Exception exception) {
-//			exception.printStackTrace();
-//		}
-
-		SavingsAccount[] saHolding = new SavingsAccount[savingsArray.length + 1];
-		for (int i = 0; i < savingsArray.length; i++) {
-			saHolding[i] = savingsArray[i];
-		}
-		saHolding[saHolding.length - 1] = newSav;
-		savingsArray = saHolding;
-		return newSav;
-	}
-
-	public SavingsAccount addSavingsAccount(SavingsAccount savingsAccount)
-			throws ExceedsFraudSuspicionLimitException, ExceedsCombinedBalanceLimitException, NegativeAmountException {
-		if (getCheckingBalance() + getSavingsBalance() + savingsAccount.getBalance() >= checkingFee) {
-			throw new ExceedsCombinedBalanceLimitException(
-					" AGGREGATE BALANCE OF YOUR CHECKING AND SAVINGS ACCOUNTS EXCEEDS $250,000.");
-
-		}
-
-		SavingsAccount[] saHolding = new SavingsAccount[this.savingsArray.length + 1];
-		for (int i = 0; i < this.savingsArray.length; i++) {
-			saHolding[i] = this.savingsArray[i];
-		}
-		saHolding[saHolding.length - 1] = savingsAccount;
-		this.savingsArray = saHolding;
-		return savingsAccount;
-	}
-
-	public SavingsAccount[] getSavingsAccounts() {
-		return savingsArray;
-	}
-
-	public int getNumberOfSavingsAccounts() {
-		return savingsArray.length;
-	}
-
-	public double getSavingsBalance() {
-		double total = 0.0;
-		for (SavingsAccount balance : savingsArray) {
-			total += balance.getBalance();
-		}
-		return total;
-
-	}
-
-	public CDAccount addCDAccount(CDOffering offering, double openingBalance)
-			throws ExceedsFraudSuspicionLimitException, NegativeAmountException {
-		if (offering == null) {
+	public CheckingAccount addCheckingAccount(CheckingAccount checkingAccount) {
+		if((getSavingsBalance()+getCheckingBalance()+checkingAccount.getBalance())<250000) {
+			this.checkingAccList.add(checkingAccount);
+			return checkingAccount;
+		} else {
 			return null;
 		}
-		CDAccount newCDA = new CDAccount();
-		newCDA.offering = offering;
-		DepositTransaction transaction = new DepositTransaction(newCDA, openingBalance);
-		try {
-			MeritBank.processTransaction(transaction);
-		} catch (NegativeAmountException exception) {
-			throw new NegativeAmountException("CAN NOT DEPOSIT OR WITHDRAW A NEGATIVE AMOUNT");
-		} catch (ExceedsFraudSuspicionLimitException exception) {
-			throw new ExceedsFraudSuspicionLimitException("TRANSACTION EXCEEDS $1000.00 AND NEEDS TO BE REVIEWED");
-
-		} catch (Exception exception) {
-
-		}
-
-		CDAccount[] cdaHolding = Arrays.copyOf(cdAccountArray, cdAccountArray.length + 1);
-		for (int i = 0; i < cdAccountArray.length; i++) {
-			cdaHolding[i] = cdAccountArray[i];
-		}
-		cdaHolding[cdaHolding.length - 1] = newCDA;
-		cdAccountArray = cdaHolding;
-		return newCDA;
 	}
-
-	public CDAccount addCDAccount(CDAccount cdAccount)
-			throws ExceedsFraudSuspicionLimitException, NegativeAmountException {
-//		DepositTransaction transaction = new DepositTransaction(cdAccount, cdAccount.getBalance());
-//
-//		try {
-//			MeritBank.processTransaction(transaction);
-//		} catch (NegativeAmountException exception) {
-//			throw new NegativeAmountException("CAN NOT DEPOSIT OR WITHDRAW A NEGATIVE AMOUNT  ");
-//		} catch (ExceedsFraudSuspicionLimitException exception) {
-//			throw new ExceedsFraudSuspicionLimitException("TRANSACTION EXCEEDS $1000.00 AND MUST BE REVIEWED ");
-//		} catch (Exception exception) {
-//
-//		}
-		CDAccount[] cdaHolding = Arrays.copyOf(this.cdAccountArray, this.cdAccountArray.length + 1);
-		for (int i = 0; i < this.cdAccountArray.length; i++) {
-			cdaHolding[i] = this.cdAccountArray[i];
+	public CheckingAccount[] getCheckingAccounts() {
+		CheckingAccount[] checking = checkingAccList.toArray(new CheckingAccount[0]);
+		return checking;
+	}
+	public CheckingAccount getCheckingAccountById(int accountHolderId) {
+		
+		return checkingAccList.get(accountHolderId - 1);
+	}
+	
+	//directly the size of arraylist is calculated.
+	public int getNumberOfCheckingAccounts() {
+		int numberOfCheckingAccounts = checkingAccList.size();
+		return numberOfCheckingAccounts;
+	}
+	
+	//adds each checking account of the account holder from the array of checking accounts
+	//to get the checking account array we call the already defined function getCheckingAccounts()
+	public double getCheckingBalance() {
+		CheckingAccount[] checkingArr = getCheckingAccounts();
+		double checkingTotal = 0;
+		for(int i=0;i<checkingArr.length;i++) {
+			checkingTotal+=checkingArr[i].getBalance();
 		}
-		cdaHolding[cdaHolding.length - 1] = cdAccount;
-		this.cdAccountArray = cdaHolding;
+		
+		return checkingTotal;
+	}
+	
+	//add a new savings account with a given opening balance if combined balance is less than $250,000
+	public SavingsAccount addSavingsAccount(double openingBalance) {
+		SavingsAccount savings = null;
+		if((getSavingsBalance()+getCheckingBalance()+openingBalance)<250000) {
+			savings=new SavingsAccount(openingBalance);
+			this.savingsAccList.add(savings);
+		}
+		return savings;
+	}
+	
+	//add a new savings account if combined balance is less than $250,000
+	public SavingsAccount addSavingsAccount(SavingsAccount savingsAccount) {
+		if((getSavingsBalance()+getCheckingBalance()+savingsAccount.getBalance())<250000) {
+			this.savingsAccList.add(savingsAccount);
+			return savingsAccount;						                          //returning savingsAccount as the return type expected is object. 
+		} else {
+			return null;
+		}
+	}
+	
+	public SavingsAccount[] getSavingsAccounts() {
+		SavingsAccount[] savings = savingsAccList.toArray(new SavingsAccount[0]); //converting to array since, return type, an array is expected.
+		return savings;
+	}
+	
+	//calculates the length of the savings account array, getSavingsAccounts() AND returns the array of savings account when invoked
+	public int getNumberOfSavingsAccounts() {
+		int numberOfSavingsAccount= (getSavingsAccounts()).length;
+		return numberOfSavingsAccount;
+	}
+	
+	public double getSavingsBalance() {
+		SavingsAccount[] savingArr=getSavingsAccounts();
+		double savingsTotal=0;
+		for(int i=0;i<savingArr.length;i++) {
+			savingsTotal+= (savingArr[i].getBalance());
+		}
+		
+		return savingsTotal;
+	}
+	
+	public CDAccount addCDAccount(CDOffering offering, double openingBalance) {
+		
+		CDAccount cd=new CDAccount(offering,openingBalance);
+		this.cdAccList.add(cd);
+		return cd;
+	}
+	
+	public CDAccount addCDAccount(CDAccount cdAccount) {
+		this.cdAccList.add(cdAccount);
 		return cdAccount;
 	}
-
+	
 	public CDAccount[] getCDAccounts() {
-		return cdAccountArray;
+		CDAccount[] cd = cdAccList.toArray(new CDAccount[0]);
+		return cd;
 	}
-
+	
 	public int getNumberOfCDAccounts() {
-		return cdAccountArray.length;
+		int numberOfCDAccounts= cdAccList.size();
+		return numberOfCDAccounts;
 	}
-
+	
 	public double getCDBalance() {
-		double total = 0.0;
-		for (CDAccount balance : cdAccountArray) {
-			total += balance.getBalance();
+		double cdTotal=0;
+		CDAccount[] cdArr= getCDAccounts();
+		for(int i=0;i<cdArr.length;i++) {
+			cdTotal+= cdArr[i].getBalance();
 		}
-		return total;
+		System.out.println("cd:"+cdTotal);
+		return cdTotal;
 	}
-
+	
 	public double getCombinedBalance() {
-		return getCDBalance() + getSavingsBalance() + getCheckingBalance();
+		return (getSavingsBalance()+getCheckingBalance()+getCDBalance());
 	}
-
-	@Override
-	public int compareTo(AccountHolder account) {
-		if (this.getCombinedBalance() > account.getCombinedBalance()) {
+	
+	public int compareTo(AccountHolder ac) {
+		if(this.getCombinedBalance()>ac.getCombinedBalance()) {
 			return 1;
 		} else {
 			return -1;
 		}
 	}
+	
+	public static AccountHolder readFromString(String accountHolderData) throws java.lang.Exception{
+		StringTokenizer tokenizer = new StringTokenizer(accountHolderData, ",");
 
-	public String getFirstName() {
-		return firstName;
+		String firstName = tokenizer.nextToken();
+		String middleName = "";
+		if (tokenizer.countTokens() == 4) {
+			middleName = tokenizer.nextToken();
+		}
+		String lastName = tokenizer.nextToken();
+		String ssn = tokenizer.nextToken();
+
+		AccountHolder account = new AccountHolder(firstName, middleName, lastName, ssn,nextId);
+		return account;
 	}
-
-	public void setFirstName(String first) {
-		this.firstName = first;
-	}
-
-	public String getMiddleName() {
-		return middleName;
-	}
-
-	public void setMiddleName(String middle) {
-		this.middleName = middle;
-	}
-
-	public String getLastName() {
-		return lastName;
-	}
-
-	public void setLastName(String last) {
-		this.lastName = last;
-	}
-
-	public String getSSN() {
-		return ssn;
-	}
-
-	public void setSSN(String ssn) {
-		this.ssn = ssn;
-	}
-
-	public CheckingAccount[] getCheckingAccounts() {
-		return checkingArray;
-	}
-
-	public int getNumberOfCheckingAccounts() {
-		return checkingArray.length;
-	}
-
+	
 	public String writeToString() {
-		StringBuilder accountHolderData = new StringBuilder();
-		accountHolderData.append(firstName).append(",");
-		accountHolderData.append(middleName).append(",");
-		accountHolderData.append(lastName).append(",");
-		accountHolderData.append(ssn);
-		return accountHolderData.toString();
+		String acString = getFirstName()+","+getMiddleName()+","+getLastName()+","+getSSN();
+		return acString;
 	}
 
-	public static AccountHolder readFromString(String accountHolderData) {
-		String[] holding = accountHolderData.split(",");
-		String firstName = holding[0];
-		String middleName = holding[1];
-		String lastName = holding[2];
-		String ssn = holding[3];
-		return new AccountHolder(firstName, middleName, lastName, ssn);
-	}
-
-	public String toString() {
-		return "Combined Balance for Account Holder" + this.getCombinedBalance();
-	}
-
+	@NotBlank(message="First Name is mandatory")
+	private String firstName;
+	private String middleName;
+	@NotBlank(message="Last Name is mandatory")
+	private String lastName;
+	@NotBlank(message="SSN is mandatory")
+	private String ssn;
+    private int id;
+	private static int nextId=1;
+	
+	//ArrayList is created for storing (1) all the savings account,(2) all the checking account,(3)all CDA account of an account holder
+	private ArrayList<SavingsAccount> savingsAccList = new ArrayList<SavingsAccount>();
+	private ArrayList<CheckingAccount> checkingAccList = new ArrayList<CheckingAccount>();
+	private ArrayList<CDAccount> cdAccList = new ArrayList<CDAccount>();
 }

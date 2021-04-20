@@ -1,153 +1,168 @@
 package com.example.Bank_App_5.Controllers;
 
-import org.springframework.web.bind.annotation.RestController;
+import java.util.List;
 
 import javax.validation.Valid;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
-import com.example.Bank_App_5.models.*;
-import com.example.Bank_App_5.exceptions.*;
+import com.example.Bank_App_5.models.ExceedsCombinedBalanceLimitException;
+import com.example.Bank_App_5.exceptions.MissingFieldException;
+import com.example.Bank_App_5.models.NegativeAmountException;
+import com.example.Bank_App_5.exceptions.NotFoundException;
+import com.example.Bank_App_5.models.AccountHolder;
+import com.example.Bank_App_5.models.CDAccount;
+import com.example.Bank_App_5.models.CDAccountDTO;
+import com.example.Bank_App_5.models.CDOffering;
+import com.example.Bank_App_5.models.CheckingAccount;
+import com.example.Bank_App_5.models.MeritBank;
+import com.example.Bank_App_5.models.SavingsAccount;
+
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 
 @RestController
 public class CentralController {
-
-	Logger logger = LoggerFactory.getLogger(CentralController.class);
-
-	@RequestMapping("/")
-	@ResponseBody
-	public String Welcome() {
-		return "Welcome to Merit Bank";
-	}
-
-	@PostMapping(value = "/AccountHolders")
+	
+	/*@GetMapping(value="/greeting")
+	public String greeting() {
+		return "Hello";
+	}*/
+	@PostMapping(value="/CDOfferings")
 	@ResponseStatus(HttpStatus.CREATED)
-	@ResponseBody
-	public AccountHolder createAccountHolder(@RequestBody @Valid AccountHolder newAccountHolder) {
-		MeritBank.addAccountHolder(newAccountHolder);
-		return newAccountHolder;
-	}
-
-	@GetMapping(value = "/AccountHolders")
-	public AccountHolder[] getAccountHolders() {
-		return MeritBank.getAccountHolders(0);
-	}
-
-	@GetMapping(value = "/AccountHolders/{id}")
-	public AccountHolder getAccountHolder(@PathVariable("id") long id) throws NotFoundException {
-		AccountHolder account = MeritBank.getAccountHolders(id);
-
-		if (account == null) {
-			logger.error("No account exists");
-			throw new NotFoundException("No account exists");
+	public CDOffering cdOfferings(@RequestBody CDOffering cdoffering) throws MissingFieldException {
+		
+		if((cdoffering.getTerm()==0)||cdoffering.getInterestRate()<=0||cdoffering.getTerm()<1||cdoffering.getInterestRate()>=1){
+			throw new MissingFieldException("Invalid details");
 		}
-
-		return account;
+		
+		MeritBank.addCDOffering(cdoffering);
+		return cdoffering;
 	}
-
-	@PostMapping(value = "/AccountHolders/{id}/CheckingAccounts")
+	
+	@GetMapping(value="/CDOfferings")
+	public List<CDOffering> getCDOfferings() {
+		
+		return MeritBank.getCDOffering();
+	}
+	
+	@PostMapping(value="/AccountHolders")
 	@ResponseStatus(HttpStatus.CREATED)
-	public CheckingAccount addChecking(@PathVariable("id") long id, @RequestBody CheckingAccount checking)
-			throws NotFoundException, ExceedsCombinedBalanceLimitException, NegativeAmountException {
-		AccountHolder account = this.getAccountHolder(id);
-
-		if (checking.getBalance() < 0) {
-			logger.warn("Negative amount exception");
-			throw new NegativeAmountException();
+	public AccountHolder addAccHolders(@RequestBody @Valid AccountHolder accountHolder) throws MissingFieldException {
+		if ((accountHolder.getFirstName() == null) || (accountHolder.getLastName() == null) ||(accountHolder.getSSN() == null)) {
+			throw new MissingFieldException("Invalid details");
 		}
-
-		account.addCheckingAccount(checking);
-
-		return checking;
+		MeritBank.addAccountHolder(accountHolder);
+		return accountHolder;
 	}
-
-	@GetMapping(value = "/AccountHolders/{id}/CheckingAccounts")
-	public CheckingAccount[] getChecking(@PathVariable("id") long id) throws NotFoundException {
-		AccountHolder account = this.getAccountHolder(id);
-
-		return account.getCheckingAccounts();
+	
+	@GetMapping(value="/AccountHolders")
+	public AccountHolder[] getAccHolders() {
+		return MeritBank.getAccountHolders();
 	}
-
-	@PostMapping(value = "/AccountHolders/{id}/SavingsAccounts")
+	
+	@GetMapping(value="/AccountHolders/{id}")
 	@ResponseStatus(HttpStatus.CREATED)
-	public SavingsAccount addSaving(@PathVariable("id") long id, @RequestBody SavingsAccount savings)
-			throws NotFoundException, ExceedsCombinedBalanceLimitException, NegativeAmountException {
-
-		AccountHolder account = this.getAccountHolder(id);
-
-		if (savings.getBalance() < 0) {
-			logger.warn("Negative amount exception");
-			throw new NegativeAmountException();
+	public AccountHolder getAccHoldersById(@PathVariable int id, AccountHolder accountHolder) throws NotFoundException{
+		if (id<=MeritBank.accHolderList.size()) {
+			if(accountHolder.getId()==id) {
+				return MeritBank.accHolderList.get(id-1);
+			}
 		}
-
-		account.addSavingsAccount(savings);
-
-		return savings;
-	}
-
-	@GetMapping(value = "/AccountHolders/{id}/SavingsAccounts")
-	public SavingsAccount[] getSavings(@PathVariable("id") long id) throws NotFoundException {
-		AccountHolder account = this.getAccountHolder(id);
-
-		return account.getSavingsAccounts();
-	}
-
-	@PostMapping(value = "/AccountHolders/{id}/CDAccounts")
+		 throw new NotFoundException("Invalid id");
+	} 
+	
+	@PostMapping(value="/AccountHolders/{id}/CheckingAccounts")
 	@ResponseStatus(HttpStatus.CREATED)
-	public CDAccount addCDAccount(@PathVariable("id") long id, @RequestBody CDAccount CDAccount)
-			throws NotFoundException, ExceedsCombinedBalanceLimitException, NegativeAmountException,
-			ExceedsFraudSuspicionLimitException, MissingFieldException {
-		AccountHolder account = this.getAccountHolder(id);
-
-		if (CDAccount.getBalance() < 0) {
-			logger.warn("Negative amount exception");
-			throw new NegativeAmountException();
+	public CheckingAccount addCheckingAcc(@RequestBody CheckingAccount ch, @PathVariable int id) throws NotFoundException,ExceedsCombinedBalanceLimitException,NegativeAmountException {
+			
+		
+		if (id<=MeritBank.accHolderList.size()) {
+			AccountHolder accountHolder = MeritBank.getAccountHolderById(id);
+			if(ch.getBalance()<0) {
+				throw new NegativeAmountException();
+			} 				
+			if (accountHolder.getCombinedBalance()+ch.getBalance()>250000) {
+				throw new ExceedsCombinedBalanceLimitException("exceeds limit of amount 250,000 max");
+			}
+			ch=new CheckingAccount(MeritBank.getNextAccountNumber(),ch.getBalance(),CheckingAccount.CHECKING_INTERESTRATE,MeritBank.getDate());
+			accountHolder.addCheckingAccount(ch);
+			
+			return ch;
 		}
-
-		if (CDAccount.getInterestRate() <= 0 || CDAccount.getTerm() <= 0 || CDAccount.getInterestRate() >= 1) {
-			logger.warn("Missing interest rate or term");
-			throw new MissingFieldException("Missing interest rate or term");
-		}
-
-		account.addCDAccount(CDAccount);
-
-		return CDAccount;
+		throw new NotFoundException("Invalid id");
 	}
-
-	@GetMapping(value = "/AccountHolders/{id}/CDAccounts")
-	public CDAccount[] getCDAccounts(@PathVariable("id") long id) throws NotFoundException {
-		AccountHolder account = this.getAccountHolder(id);
-
-		return account.getCDAccounts();
-	}
-
-	@PostMapping("/CDOfferings")
+	
+	@GetMapping(value="/AccountHolders/{id}/CheckingAccounts")
 	@ResponseStatus(HttpStatus.CREATED)
-	public CDOffering createCDOffering(@RequestBody CDOffering offering) throws MissingFieldException {
-
-		if (offering.getInterestRate() <= 0 || offering.getTerm() <= 0 || offering.getInterestRate() >= 1) {
-			logger.warn("Missing interest rate or term");
-			throw new MissingFieldException("Missing interest rate or term");
+	public CheckingAccount[] getCheckingAcc(AccountHolder accountHolder, @PathVariable int id) throws NotFoundException {
+		if(id>MeritBank.accHolderList.size()) {
+			throw new NotFoundException("Invalid id");
 		}
-
-		MeritBank.getBestCDOffering(offering);
-		return offering;
+		accountHolder = MeritBank.getAccountHolderById(id);		
+		return accountHolder.getCheckingAccounts();
 	}
+	
+	@PostMapping(value="/AccountHolders/{id}/SavingsAccounts") 
+	@ResponseStatus(HttpStatus.CREATED)
+	public SavingsAccount addSavingsAcc(@RequestBody SavingsAccount sv, @PathVariable int id) throws NotFoundException,ExceedsCombinedBalanceLimitException,NegativeAmountException{
+		if(id<=MeritBank.accHolderList.size()) {
+			AccountHolder accountHolder = MeritBank.getAccountHolderById(id);
+			if(sv.getBalance()<0) {
+				throw new NegativeAmountException();
+			} 
+			if((accountHolder.getCombinedBalance() + sv.getBalance()) > 250000) {
+					throw new ExceedsCombinedBalanceLimitException("exceeds limit of amount 250,000 max");
+			}
+			sv=new SavingsAccount(MeritBank.getNextAccountNumber(),sv.getBalance(),SavingsAccount.SAVINGS_INTERESTRATE,MeritBank.getDate());
+			accountHolder.addSavingsAccount(sv);
 
-	@GetMapping("/CDOfferings")
-	public CDOffering[] getCDOfferings() throws NotFoundException {
-		CDOffering[] cdOfferings = MeritBank.getCDOfferings();
-		return cdOfferings;
+			return sv;
+		}
+		
+		throw new NotFoundException("Invalid id");
 	}
-
+	
+	@GetMapping(value="/AccountHolders/{id}/SavingsAccounts")
+	@ResponseStatus(HttpStatus.CREATED)
+	public SavingsAccount[] getSavingsAcc(AccountHolder accountHolder, @PathVariable int id) throws NotFoundException {
+		if(id>MeritBank.accHolderList.size())
+			throw new NotFoundException("Invalid id");
+		accountHolder = MeritBank.getAccountHolderById(id);
+		return accountHolder.getSavingsAccounts();
+	}
+	
+	@PostMapping(value="/AccountHolders/{id}/CDAccounts")
+	@ResponseStatus(HttpStatus.CREATED)
+	public CDAccount addCDAccounts(@RequestBody CDAccountDTO dto,@PathVariable int id) throws NotFoundException,NegativeAmountException {
+		if(id<=MeritBank.accHolderList.size()) {
+			
+			AccountHolder accountHolder = MeritBank.getAccountHolderById(id);
+			CDOffering cdo = MeritBank.getCDOfferingById(dto.getCdOffering().getId());
+			CDAccount cda = new CDAccount(cdo, dto.getBalance());
+			
+			if(cda.getBalance()<0) {
+				throw new NegativeAmountException();
+			} 
+			
+			accountHolder.addCDAccount(cda); 
+			return cda;
+		}
+		throw new NotFoundException("Invalid id");
+	}
+	
+	@GetMapping(value="/AccountHolders/{id}/CDAccounts")
+	@ResponseStatus(HttpStatus.CREATED)
+	public CDAccount[] getCDAcc(AccountHolder accountHolder, @PathVariable int id) throws NotFoundException {
+		if(id>MeritBank.accHolderList.size())
+			throw new NotFoundException("Invalid id");
+		accountHolder = MeritBank.getAccountHolderById(id);
+		return accountHolder.getCDAccounts();
+	}
+	
 }

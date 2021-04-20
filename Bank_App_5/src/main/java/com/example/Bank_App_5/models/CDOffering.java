@@ -1,36 +1,76 @@
 package com.example.Bank_App_5.models;
 
-import java.text.ParseException;
+import javax.validation.constraints.NotBlank;
 
 public class CDOffering {
-	private int term;
-	private double interestRate;
-
-	public CDOffering(int term, double interestRate){
+	/*public CDOffering(int term, double interestRate) {
 		this.term = term;
 		this.interestRate = interestRate;
+		
+	}*/
+	public CDOffering(int term, double interestRate) {
+		this.term = term;
+		this.interestRate = interestRate;
+		this.id=nextId++;
+	}
+	
+	
+	public CDOffering(int id) {
+		CDOffering cd = MeritBank.getCDOfferingById(id);
+		this.term = cd.term;
+		this.interestRate = cd.interestRate;
+		this.id=cd.id;
 	}
 
 	public int getTerm() {
-		return term;
+		return this.term;
 	}
 	
+	
 	public double getInterestRate() {
-		return interestRate;
+		return this.interestRate;
+	}
+	
+	
+	
+	public int getId() {
+		return id;
 	}
 
-    static CDOffering readFromString(String cdOfferingDataString) {
-    	String[] holding = cdOfferingDataString.split(",");
-    	int term = Integer.parseInt(holding[0]);
-    	double interestRate = Double.parseDouble(holding[1]);
-    	return new CDOffering(term, interestRate);
-    }
+	public void setId(int id) {
+		this.id = id;
+	}
+	
 
-    public String writeToString() {
-    	StringBuilder cdOfferingData = new StringBuilder();
-    	cdOfferingData.append(term).append(",");
-    	cdOfferingData.append(interestRate);
-    	return cdOfferingData.toString(); 
-    }
+
+	public static CDOffering readFromString(String cdOfferingDataString) throws java.lang.NumberFormatException{
+		//expecting like this: 1,0.018
+		CDOffering cd = null;
+
+		if(cdOfferingDataString.indexOf(',')!=-1) {
+			int term = Integer.parseInt(cdOfferingDataString.substring(0, cdOfferingDataString.indexOf(',')));  
+			double rate = Double.parseDouble(cdOfferingDataString.substring(cdOfferingDataString.indexOf(',')+1));
+			cd = new CDOffering(term,rate);
+		} 
+		else {
+			throw new NumberFormatException();
+		}
+
+		return cd;
+	}
+
+	
+
+	public String writeToString() {
+		String cdString = this.getTerm() + "," + this.getInterestRate();
+		return cdString;
+	}
+	//CDOffering cd = new CDOffering(getTerm(),getInterestRate());
+
+	private int term;
+	
+	private double interestRate;
+	private int id;
+	private static int nextId=1;
 
 }
