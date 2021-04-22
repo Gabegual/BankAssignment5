@@ -29,10 +29,11 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 @RestController
 public class CentralController {
 	
-	/*@GetMapping(value="/greeting")
+	@GetMapping(value="/")
 	public String greeting() {
-		return "Hello";
-	}*/
+		return "Welcome to MeritBank !";
+	}
+	
 	@PostMapping(value="/CDOfferings")
 	@ResponseStatus(HttpStatus.CREATED)
 	public CDOffering cdOfferings(@RequestBody CDOffering cdoffering) throws MissingFieldException {
